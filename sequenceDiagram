@@ -1,0 +1,21 @@
+sequenceDiagram
+  participant User as Browser
+  participant Portal as Portal App (Angular / SWA)
+  participant SWA as Azure Static Web Apps
+  participant APIM as Azure API Management
+  participant Func as get-listing-by-id (Azure Function)
+  participant DB as CosmosDB / MongoDB
+  participant AI as Application Insights
+
+  User->>Portal: Click "View listing"
+  Portal->>SWA: GET /listings/{id} (client request)
+  SWA->>APIM: Forward request to API gateway
+  APIM->>Func: GET /listings/{id} (route: listings/{id})
+  Note right of Func: Reads schema [`Listing`](packages/api/src/models/listing.schema.ts)
+  Func->>DB: Query listing by id (e.g. findOne)
+  DB-->>Func: Listing document
+  Func->>APIM: Return 200 JSON (listing)
+  APIM->>SWA: Proxy response
+  SWA->>Portal: Deliver JSON to client
+  Portal->>User: Render listing details
+  Func->>AI: Emit telemetry (requests, duration, errors)
